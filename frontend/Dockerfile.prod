@@ -1,0 +1,44 @@
+# ================
+# Build stage
+# ================
+FROM node:20-bullseye AS build
+WORKDIR /app
+
+# 具可重現性的安裝
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN \
+  if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; \
+  elif [ -f pnpm-lock.yaml ]; then npm i -g pnpm && pnpm i --frozen-lockfile; \
+  elif [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+  else npm i --no-audit --no-fund; fi
+
+COPY . .
+# 明確指定生產 API 前綴（Ingress 反向代理 /api 到後端）
+ARG VITE_API_BASE_URL=/api
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+RUN npm run build
+
+# ================
+# Runtime stage
+# ================
+FROM nginx:1.27-alpine
+WORKDIR /usr/share/nginx/html
+
+# 安全強化與時區
+RUN adduser -D -u 10001 webuser && \
+    apk add --no-cache bash && \
+    ln -snf /usr/share/zoneinfo/Asia/Taipei /etc/localtime && echo "Asia/Taipei" > /etc/timezone
+
+# 複製靜態檔
+COPY --from=build /app/dist/ /usr/share/nginx/html/
+
+# 複製 Nginx 設定（含 SPA fallback；不在容器內做 /api 代理，交由 K8s Ingress）
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+USER webuser
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+ CMD wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1
+
+CMD ["nginx","-g","daemon off;"]

@@ -1,0 +1,12 @@
+# Maven/IDE
+target/
+.idea/
+*.iml
+.mvn/wrapper/maven-wrapper.jar
+# OS
+.DS_Store
+# Node in backend (若無可刪)
+node_modules/
+# Git
+.git
+.gitignore

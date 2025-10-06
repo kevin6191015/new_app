@@ -1,0 +1,7 @@
+@use './_variables' as *;
+
+:root { --primary-color: #{$primary-color}; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #app { height: 100%; width: 100%; }
+body { margin: 0; }
