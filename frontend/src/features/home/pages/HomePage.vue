@@ -91,7 +91,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@app/stores/useAuthStore'
 import { useCourseStore } from '@app/stores/useCourseStore'
 
-import dashboardbg from '@assets/bg.png'
+import dashboardbg from '@assets/code.png'
 
 const pageBgVar = computed(() => ({ '--page-bg': `url(${dashboardbg})` }))
 
